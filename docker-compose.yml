@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  app:
+    # 1. Build configuration:
+    build:
+      context: . 
+    
+    # Optional: Assign a fixed name to the container for easier reference
+    container_name: 2fa-service
+
+    # 2. Port mapping: Map container's 8080 to host's 8080
+    ports:
+      - "8080:8080"
+    
+    # 3. Environment variables: Set timezone (critical for TOTP sync)
+    environment:
+      TZ: UTC
+
+    # 4. Volume mounts:
+    volumes:
+      # Named Volume Mounts for persistent, shared data
+      # The /data directory stores the crucial decrypted seed.txt
+      - seed-data:/app/data
+      # The /cron directory is where maintenance scripts output logs/data
+      - cron-output:/app/cron
+      
+      # Bind Mounts for key files (read-only)
+      # These files are needed during the container's runtime (api.py startup)
+      - ./student_private.pem:/app/student_private.pem:ro
+      - ./student_public.pem:/app/student_public.pem:ro
+      # Assuming 'instructor_public.pem' exists and is needed by another script 
+      - ./instructor_public.pem:/app/instructor_public.pem:ro
+    
+    # 5. Restart policy: Ensure the service restarts if it fails or the host machine reboots
+    restart: unless-stopped
+
+# 6. Named Volumes Definition
+volumes:
+  seed-data:
+    # Driver: default (local)
+  cron-output:
+    # Driver: default (local)
